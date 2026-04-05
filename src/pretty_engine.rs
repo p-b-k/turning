@@ -42,6 +42,7 @@ where
     fn init(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Vec<Option<char>>) {
         self.last_state = machine.logic.get_start();
         print_state(self, machine, tape);
+        sleep(Duration::from_millis(self.sleep_time));
     }
 
     fn new_state(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Vec<Option<char>>) {

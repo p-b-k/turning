@@ -2,6 +2,7 @@
 // Try a generic loader that reads the tape from the input
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use std::env;
 use std::fs::read_to_string;
 use std::io::{Read, stdin};
 
@@ -12,15 +13,15 @@ use turing::pretty_engine::PrettyEngine;
 const LOGIC_ROOT: &str = "logic";
 const DEFAULT_LOGIC: &str = "adder";
 
-struct AppData {
+struct AppConfig {
     pub file: String,
-    pub delay: u32,
+    pub delay: u64,
 }
 
-impl AppData {
-    pub fn new() -> AppData {
+impl AppConfig {
+    pub fn new() -> AppConfig {
         let file = format!("{LOGIC_ROOT}/{DEFAULT_LOGIC}.tm");
-        AppData {
+        AppConfig {
             file: String::from(file),
             delay: 1000,
         }
@@ -29,7 +30,9 @@ impl AppData {
 
 fn main() {
     // Create the application data structure
-    let data = AppData::new();
+    let mut cfg = AppConfig::new();
+
+    process_args(&mut cfg);
 
     // Create the imput tape vector ...
     let mut tape: Vec<Option<char>> = Vec::new();
@@ -52,12 +55,14 @@ fn main() {
     logic.add_final(4);
 
     // ... and read it from the file.
-    read_trans_from_file(&data, &mut logic);
+    read_trans_from_file(&cfg, &mut logic);
 
     // Create the turning machine object
     let mut machine: TuringMachine<char, usize, DynLogic> = TuringMachine::new(1, logic);
-    let mut engine = PrettyEngine::new();
     machine.position = 1;
+
+    let mut engine = PrettyEngine::new();
+    engine.sleep_time = cfg.delay;
 
     machine.run(&mut tape, &mut engine);
 }
@@ -74,8 +79,8 @@ enum PState {
     Out,
 }
 
-fn read_trans_from_file(app_data: &AppData, logic: &mut DynLogic) {
-    let file_data = read_to_string(app_data.file.as_str()).unwrap();
+fn read_trans_from_file(cfg: &AppConfig, logic: &mut DynLogic) {
+    let file_data = read_to_string(cfg.file.as_str()).unwrap();
     let mut state = PState::Start;
 
     let mut size_str = String::new();
@@ -198,5 +203,23 @@ fn read_trans_from_file(app_data: &AppData, logic: &mut DynLogic) {
         _ => {
             panic!("Unexpected end state: {state:?}")
         }
+    }
+}
+
+fn process_args(cfg: &mut AppConfig) {
+    let args: Vec<String> = env::args().collect();
+
+    let mut i = 1;
+    while i < args.len() {
+        if args[i] == "--logic" {
+            i = i + 1;
+            cfg.file = format!("{LOGIC_ROOT}/{}.tm", args[i]);
+        } else if args[i] == "--delay" {
+            i = i + 1;
+            cfg.delay = args[i].parse().unwrap();
+        } else {
+            panic!("Unknown argument '{}'", args[i]);
+        }
+        i = i + 1;
     }
 }
