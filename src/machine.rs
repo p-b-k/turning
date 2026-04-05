@@ -2,26 +2,27 @@
 // Make a turing machine
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-use std::marker::PhantomData;
+use std::{fmt::Debug, marker::PhantomData};
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum Dir {
     Left,
     Right,
 }
 
 pub trait TuringLogic<A, S> {
-    fn do_trans(state: &S, input: &Option<A>) -> Option<(S, Option<A>, Dir)>;
-    fn is_final(state: &S) -> bool;
-    fn get_start() -> S;
-    fn is_valid(input: &A) -> bool;
+    fn do_trans(&self, state: &S, input: &Option<A>) -> Option<(S, Option<A>, Dir)>;
+    fn is_final(&self, state: &S) -> bool;
+    fn get_start(&self) -> S;
+    fn is_valid(&self, input: &A) -> bool;
 }
 
 pub struct TuringMachine<A, S, T>
 where
     T: TuringLogic<A, S>,
 {
-    phantom_t: PhantomData<T>,
     phantom_a: PhantomData<A>,
+    pub logic: T,
     pub state: S,
     pub position: usize,
 }
@@ -39,18 +40,18 @@ impl<A, S, T> TuringMachine<A, S, T>
 where
     T: TuringLogic<A, S>,
 {
-    pub fn new(position: usize) -> TuringMachine<A, S, T> {
+    pub fn new(position: usize, logic: T) -> TuringMachine<A, S, T> {
         TuringMachine {
-            phantom_t: PhantomData {},
             phantom_a: PhantomData {},
-            state: T::get_start(),
+            state: logic.get_start(),
+            logic,
             position,
         }
     }
 
     fn advance(&mut self, tape: &mut Vec<Option<A>>) -> bool {
         let next = &tape[self.position];
-        match T::do_trans(&self.state, next) {
+        match self.logic.do_trans(&self.state, next) {
             Some((s, c, d)) => {
                 tape[self.position] = c;
                 self.state = s;
@@ -89,11 +90,12 @@ where
     pub fn run<E>(&mut self, tape: &mut Vec<Option<A>>, eng: &mut E)
     where
         E: TuringEngine<A, S, T>,
+        A: Debug,
     {
         tape.iter().for_each(|x| match x {
             Some(c) => {
-                if !T::is_valid(c) {
-                    panic!("Invalid input on tape");
+                if !self.logic.is_valid(c) {
+                    panic!("Invalid input on tape ({c:?})");
                 }
             }
             None => {}

@@ -35,7 +35,7 @@ enum AdderAlphabet {
 type AA = AdderAlphabet;
 
 impl TuringLogic<AA, AS> for AL {
-    fn do_trans(state: &AS, input: &Option<AA>) -> Option<(AS, Option<AA>, Dir)> {
+    fn do_trans(&self, state: &AS, input: &Option<AA>) -> Option<(AS, Option<AA>, Dir)> {
         match (state, input) {
             (AS::Q0, Some(AA::A1)) => Some((AS::Q0, Some(AA::A1), Dir::Right)),
             (AS::Q0, Some(AA::A0)) => Some((AS::Q1, Some(AA::A1), Dir::Right)),
@@ -49,15 +49,15 @@ impl TuringLogic<AA, AS> for AL {
         }
     }
 
-    fn is_final(state: &AS) -> bool {
+    fn is_final(&self, state: &AS) -> bool {
         state.clone() == AS::Q4
     }
 
-    fn is_valid(_: &AA) -> bool {
+    fn is_valid(&self, _: &AA) -> bool {
         true
     }
 
-    fn get_start() -> AS {
+    fn get_start(&self) -> AS {
         AS::Q0
     }
 }
@@ -70,7 +70,7 @@ struct AdderEngine {
 
 impl TuringEngine<AA, AS, AL> for AdderEngine {
     fn init(&mut self, machine: &AdderMachine, tape: &Vec<Option<AA>>) {
-        self.last_state = AL::get_start();
+        self.last_state = machine.logic.get_start();
         print_state(self, machine, tape);
     }
     fn new_state(&mut self, machine: &AdderMachine, tape: &Vec<Option<AA>>) {
@@ -96,7 +96,7 @@ fn print_state(engine: &AdderEngine, machine: &AdderMachine, tape: &Vec<Option<A
 
     let new_state = &engine.last_state.clone() != &machine.state.clone();
 
-    if AL::is_final(&machine.state) {
+    if machine.logic.is_final(&machine.state) {
         if new_state {
             print!(
                 "{}",
@@ -153,9 +153,9 @@ pub fn main() {
 
     let mut tape: Vec<Option<AA>> = Vec::new();
 
-    let mut machine = AdderMachine::new(1);
+    let mut machine = AdderMachine::new(1, AdderLogic {});
     let mut engine = AdderEngine {
-        last_state: AL::get_start(),
+        last_state: machine.logic.get_start(),
     };
 
     initialize_tape(&mut tape, a_str.parse().unwrap(), b_str.parse().unwrap());
@@ -168,7 +168,7 @@ pub fn main() {
     println!("Final Tape State");
     print_tape(&tape);
 
-    if AL::is_final(&machine.state) {
+    if machine.logic.is_final(&machine.state) {
         println!("Success");
     } else {
         println!("Failure");

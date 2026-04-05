@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 ansi_term = "0.12.1"
+console = "0.16.3"

@@ -22,14 +22,28 @@ where
     pub last_state: usize,
 }
 
+impl<AL> PrettyEngine<AL>
+where
+    AL: TuringLogic<char, usize>,
+{
+    pub fn new() -> PrettyEngine<AL> {
+        PrettyEngine {
+            sleep_time: 100,
+            phantom: PhantomData {},
+            last_state: 0,
+        }
+    }
+}
+
 impl<AL> TuringEngine<char, usize, AL> for PrettyEngine<AL>
 where
     AL: TuringLogic<char, usize>,
 {
     fn init(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Vec<Option<char>>) {
-        self.last_state = AL::get_start();
+        self.last_state = machine.logic.get_start();
         print_state(self, machine, tape);
     }
+
     fn new_state(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Vec<Option<char>>) {
         print_state(self, machine, tape);
         self.last_state = machine.state.clone();
@@ -48,7 +62,7 @@ fn print_state<AL>(
 
     let new_state = &engine.last_state.clone() != &machine.state.clone();
 
-    if AL::is_final(&machine.state) {
+    if machine.logic.is_final(&machine.state) {
         if new_state {
             print!(
                 "{}",
