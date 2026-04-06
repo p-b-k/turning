@@ -2,7 +2,7 @@
 // Implement a "universal" tape for a turing machine
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-use std::collections::HashMap;
+use std::collections::{HashMap, hash_map::Values};
 
 pub struct Tape<A>
 where
@@ -66,5 +66,9 @@ where
         }
 
         bounds
+    }
+
+    pub fn values(&self) -> Values<'_, i128, A> {
+        self.map.values()
     }
 }

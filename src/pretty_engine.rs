@@ -4,7 +4,10 @@
 
 use std::{marker::PhantomData, thread::sleep, time::Duration};
 
-use crate::machine::{TuringEngine, TuringLogic, TuringMachine};
+use crate::{
+    machine::{TuringEngine, TuringLogic, TuringMachine},
+    tape::Tape,
+};
 
 const BLANK_CHAR: char = ' ';
 
@@ -39,13 +42,13 @@ impl<AL> TuringEngine<char, usize, AL> for PrettyEngine<AL>
 where
     AL: TuringLogic<char, usize>,
 {
-    fn init(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Vec<Option<char>>) {
+    fn init(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Tape<char>) {
         self.last_state = machine.logic.get_start();
         print_state(self, machine, tape);
         sleep(Duration::from_millis(self.sleep_time));
     }
 
-    fn new_state(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Vec<Option<char>>) {
+    fn new_state(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Tape<char>) {
         print_state(self, machine, tape);
         self.last_state = machine.state.clone();
         sleep(Duration::from_millis(self.sleep_time));
@@ -55,7 +58,7 @@ where
 fn print_state<AL>(
     engine: &PrettyEngine<AL>,
     machine: &TuringMachine<char, usize, AL>,
-    tape: &Vec<Option<char>>,
+    tape: &Tape<char>,
 ) where
     AL: TuringLogic<char, usize>,
 {
@@ -87,9 +90,11 @@ fn print_state<AL>(
         }
     }
 
-    for i in 0..tape.len() {
+    let (l, h) = tape.bounds().unwrap();
+
+    for i in (l - 1)..(h + 1) {
         let is_pos = i == machine.position;
-        let char_to_print = match &tape[i] {
+        let char_to_print = match tape.get(&i) {
             Some(c) => c.clone(),
             None => BLANK_CHAR,
         };

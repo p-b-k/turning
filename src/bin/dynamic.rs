@@ -9,6 +9,7 @@ use std::io::{Read, stdin};
 use turing::dyn_machine::DynLogic;
 use turing::machine::{Dir, TuringMachine};
 use turing::pretty_engine::PrettyEngine;
+use turing::tape::Tape;
 
 const LOGIC_ROOT: &str = "logic";
 const DEFAULT_LOGIC: &str = "adder";
@@ -35,17 +36,24 @@ fn main() {
     process_args(&mut cfg);
 
     // Create the imput tape vector ...
-    let mut tape: Vec<Option<char>> = Vec::new();
+    let mut tape: Tape<char> = Tape::new();
 
     // ... and set it up reading from stdin
     let mut buf: Vec<u8> = Vec::new();
     stdin().read_to_end(&mut buf).unwrap();
+
+    let mut i: i128 = 0;
     buf.iter().for_each(|u| {
-        tape.push(if u.is_ascii_whitespace() {
-            None
-        } else {
-            Some(u.clone() as char)
-        })
+        tape.set(
+            &i,
+            if u.is_ascii_whitespace() {
+                None
+            } else {
+                Some(u.clone() as char)
+            },
+        );
+
+        i = i + 1;
     });
 
     // Now, create the Dynamic Logic ...
@@ -58,8 +66,7 @@ fn main() {
     read_trans_from_file(&cfg, &mut logic);
 
     // Create the turning machine object
-    let mut machine: TuringMachine<char, usize, DynLogic> = TuringMachine::new(1, logic);
-    machine.position = 1;
+    let mut machine: TuringMachine<char, usize, DynLogic> = TuringMachine::new(0, logic);
 
     let mut engine = PrettyEngine::new();
     engine.sleep_time = cfg.delay;

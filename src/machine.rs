@@ -4,6 +4,8 @@
 
 use std::{fmt::Debug, marker::PhantomData};
 
+use crate::tape::Tape;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Dir {
     Left,
@@ -20,27 +22,30 @@ pub trait TuringLogic<A, S> {
 pub struct TuringMachine<A, S, T>
 where
     T: TuringLogic<A, S>,
+    A: Clone,
 {
     phantom_a: PhantomData<A>,
     pub logic: T,
     pub state: S,
-    pub position: usize,
+    pub position: i128,
 }
 
 pub trait TuringEngine<A, S, T>
 where
     T: TuringLogic<A, S>,
+    A: Clone,
 {
-    fn init(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Vec<Option<A>>) {}
-    fn new_state(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Vec<Option<A>>) {}
-    fn finalize(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Vec<Option<A>>) {}
+    fn init(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
+    fn new_state(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
+    fn finalize(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
 }
 
 impl<A, S, T> TuringMachine<A, S, T>
 where
     T: TuringLogic<A, S>,
+    A: Clone,
 {
-    pub fn new(position: usize, logic: T) -> TuringMachine<A, S, T> {
+    pub fn new(position: i128, logic: T) -> TuringMachine<A, S, T> {
         TuringMachine {
             phantom_a: PhantomData {},
             state: logic.get_start(),
@@ -49,24 +54,19 @@ where
         }
     }
 
-    fn advance(&mut self, tape: &mut Vec<Option<A>>) -> bool {
-        let next = &tape[self.position];
+    fn advance(&mut self, tape: &mut Tape<A>) -> bool
+    where
+        A: Clone,
+    {
+        let next = &tape.get(&self.position);
         match self.logic.do_trans(&self.state, next) {
             Some((s, c, d)) => {
-                tape[self.position] = c;
+                tape.set(&self.position, c);
                 self.state = s;
                 match d {
-                    Dir::Left => {
-                        if self.position == 0 {
-                            panic!("The pointer has run off the left edge of the tape");
-                        }
-                        self.position = self.position - 1
-                    }
+                    Dir::Left => self.position = self.position - 1,
                     Dir::Right => {
                         self.position = self.position + 1;
-                        if self.position >= tape.len() {
-                            panic!("THe pointer has run off the right edge of the tape")
-                        }
                     }
                 }
                 true
@@ -75,9 +75,10 @@ where
         }
     }
 
-    fn run_to_end<E>(&mut self, tape: &mut Vec<Option<A>>, eng: &mut E)
+    fn run_to_end<E>(&mut self, tape: &mut Tape<A>, eng: &mut E)
     where
         E: TuringEngine<A, S, T>,
+        A: Clone,
     {
         if self.advance(tape) {
             eng.new_state(self, tape);
@@ -87,19 +88,24 @@ where
         }
     }
 
-    pub fn run<E>(&mut self, tape: &mut Vec<Option<A>>, eng: &mut E)
+    pub fn run<E>(&mut self, tape: &mut Tape<A>, eng: &mut E)
     where
         E: TuringEngine<A, S, T>,
         A: Debug,
     {
-        tape.iter().for_each(|x| match x {
-            Some(c) => {
-                if !self.logic.is_valid(c) {
-                    panic!("Invalid input on tape ({c:?})");
-                }
+        // tape.iter().for_each(|x| match x {
+        //     Some(c) => {
+        //         if !self.logic.is_valid(c) {
+        //             panic!("Invalid input on tape ({c:?})");
+        //         }
+        //     }
+        //     None => {}
+        // });
+        for e in tape.values() {
+            if !self.logic.is_valid(e) {
+                panic!("Invalid input character ({e:?})");
             }
-            None => {}
-        });
+        }
 
         eng.init(self, tape);
 

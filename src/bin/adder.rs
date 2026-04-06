@@ -9,7 +9,10 @@ use ansi_term::{
     Style,
 };
 
-use turing::machine::{Dir, TuringEngine, TuringLogic, TuringMachine};
+use turing::{
+    machine::{Dir, TuringEngine, TuringLogic, TuringMachine},
+    tape::Tape,
+};
 
 pub struct AdderLogic {}
 
@@ -69,18 +72,18 @@ struct AdderEngine {
 }
 
 impl TuringEngine<AA, AS, AL> for AdderEngine {
-    fn init(&mut self, machine: &AdderMachine, tape: &Vec<Option<AA>>) {
+    fn init(&mut self, machine: &AdderMachine, tape: &Tape<AA>) {
         self.last_state = machine.logic.get_start();
         print_state(self, machine, tape);
     }
-    fn new_state(&mut self, machine: &AdderMachine, tape: &Vec<Option<AA>>) {
+    fn new_state(&mut self, machine: &AdderMachine, tape: &Tape<AA>) {
         print_state(self, machine, tape);
         self.last_state = machine.state.clone();
         sleep(Duration::from_millis(100));
     }
 }
 
-fn print_state(engine: &AdderEngine, machine: &AdderMachine, tape: &Vec<Option<AA>>) {
+fn print_state(engine: &AdderEngine, machine: &AdderMachine, tape: &Tape<AA>) {
     let state_id = match machine.state {
         AS::Q0 => "q0",
         AS::Q1 => "q1",
@@ -120,9 +123,11 @@ fn print_state(engine: &AdderEngine, machine: &AdderMachine, tape: &Vec<Option<A
         }
     }
 
-    for i in 0..tape.len() {
+    let (l, h) = tape.bounds().unwrap();
+
+    for i in (l - 1)..(h + 1) {
         let is_pos = i == machine.position;
-        let char_to_print = match &tape[i] {
+        let char_to_print = match &tape.get(&i) {
             Some(e) => match e {
                 AA::A0 => "0",
                 AA::A1 => "1",
@@ -151,9 +156,9 @@ pub fn main() {
     let b_str = args[2].as_str();
     println!("Adding {a_str} to {b_str}");
 
-    let mut tape: Vec<Option<AA>> = Vec::new();
+    let mut tape: Tape<AA> = Tape::new();
 
-    let mut machine = AdderMachine::new(1, AdderLogic {});
+    let mut machine = AdderMachine::new(0, AdderLogic {});
     let mut engine = AdderEngine {
         last_state: machine.logic.get_start(),
     };
@@ -175,28 +180,35 @@ pub fn main() {
     }
 }
 
-fn print_tape(tape: &Vec<Option<AA>>) {
-    tape.iter().for_each(|i| match i {
-        Some(a) => match a {
-            AA::A0 => print!("0"),
-            AA::A1 => print!("1"),
-        },
-        None => {
-            print!("#");
+fn print_tape(tape: &Tape<AA>) {
+    let (l, h) = tape.bounds().unwrap();
+
+    for i in (l - 1)..(h + 1) {
+        match tape.get(&i) {
+            Some(a) => match a {
+                AA::A0 => print!("0"),
+                AA::A1 => print!("1"),
+            },
+            None => {
+                print!("#");
+            }
         }
-    });
+    }
 
     println!("");
 }
 
-fn initialize_tape(tape: &mut Vec<Option<AA>>, a: usize, b: usize) {
-    tape.push(None);
-    for _ in 0..a {
-        tape.push(Some(AA::A1));
+fn initialize_tape(tape: &mut Tape<AA>, a: usize, b: usize) {
+    let sp: i128 = a as i128;
+    for i in 0..a {
+        let idx: i128 = i as i128;
+        tape.set(&idx, Some(AA::A1));
     }
-    tape.push(Some(AA::A0));
-    for _ in 0..b {
-        tape.push(Some(AA::A1));
+
+    tape.set(&sp, Some(AA::A0));
+
+    for i in 0..b {
+        let idx: i128 = (a + i + 1) as i128;
+        tape.set(&idx, Some(AA::A1));
     }
-    tape.push(None);
 }
