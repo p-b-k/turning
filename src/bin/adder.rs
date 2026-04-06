@@ -125,7 +125,7 @@ fn print_state(engine: &AdderEngine, machine: &AdderMachine, tape: &Tape<AA>) {
 
     let (l, h) = tape.bounds().unwrap();
 
-    for i in (l - 1)..(h + 1) {
+    for i in (l - 1)..(h + 2) {
         let is_pos = i == machine.position;
         let char_to_print = match &tape.get(&i) {
             Some(e) => match e {
