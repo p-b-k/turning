@@ -5,3 +5,4 @@
 pub mod dyn_machine;
 pub mod machine;
 pub mod pretty_engine;
+pub mod tape;
