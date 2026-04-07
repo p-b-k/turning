@@ -23,6 +23,7 @@ pub struct TuringMachine<A, S, T>
 where
     T: TuringLogic<A, S>,
     A: Clone,
+    A: PartialEq,
 {
     phantom_a: PhantomData<A>,
     pub logic: T,
@@ -34,9 +35,10 @@ pub trait TuringEngine<A, S, T>
 where
     T: TuringLogic<A, S>,
     A: Clone,
+    A: PartialEq,
 {
     fn init(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
-    fn new_state(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
+    fn new_state(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>, _altered :Option<i128>) {}
     fn finalize(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
 }
 
@@ -44,6 +46,7 @@ impl<A, S, T> TuringMachine<A, S, T>
 where
     T: TuringLogic<A, S>,
     A: Clone,
+    A: PartialEq,
 {
     pub fn new(position: i128, logic: T) -> TuringMachine<A, S, T> {
         TuringMachine {
@@ -62,7 +65,8 @@ where
         let next = &tape.get(&self.position);
         match self.logic.do_trans(&self.state, next) {
             Some((s, c, d)) => {
-                tape.set(&self.position, c);
+                let pos = self.position;
+                tape.set(&pos, c.clone());
                 self.state = s;
                 match d {
                     Dir::Left => self.position = self.position - 1,
@@ -70,7 +74,7 @@ where
                         self.position = self.position + 1;
                     }
                 }
-                eng.new_state(self, tape);
+                eng.new_state(self, tape, if next != &c { Some(pos) } else {None});
                 true
             }
             None => false,

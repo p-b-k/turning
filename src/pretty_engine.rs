@@ -44,12 +44,12 @@ where
 {
     fn init(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Tape<char>) {
         self.last_state = machine.logic.get_start();
-        print_state(self, machine, tape);
+        print_state(self, machine, tape, None);
         sleep(Duration::from_millis(self.sleep_time));
     }
 
-    fn new_state(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Tape<char>) {
-        print_state(self, machine, tape);
+    fn new_state(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Tape<char>, alt : Option<i128>) {
+        print_state(self, machine, tape, alt);
         self.last_state = machine.state.clone();
         sleep(Duration::from_millis(self.sleep_time));
     }
@@ -59,6 +59,7 @@ fn print_state<AL>(
     engine: &PrettyEngine<AL>,
     machine: &TuringMachine<char, usize, AL>,
     tape: &Tape<char>,
+    alt : Option<i128>
 ) where
     AL: TuringLogic<char, usize>,
 {
@@ -94,6 +95,7 @@ fn print_state<AL>(
 
     for i in (l - 1)..(h + 2) {
         let is_pos = i == machine.position;
+        let is_alt = match alt { Some(x) => x == i, None => false };
         let char_to_print = match tape.get(&i) {
             Some(c) => c.clone(),
             None => BLANK_CHAR,
@@ -107,7 +109,16 @@ fn print_state<AL>(
                     .paint(format!("{}", Yellow.paint(format!("{}", char_to_print))))
             );
         } else {
-            print!("{}", Blue.paint(format!("{}", char_to_print)));
+            if is_alt {
+                print!(
+                    "{}",
+                    Style::new()
+                        .reverse()
+                        .paint(format!("{}", Green.paint(format!("{}", char_to_print))))
+                );
+            } else {
+                print!("{}", Blue.paint(format!("{}", char_to_print)));
+            }
         }
     }
 

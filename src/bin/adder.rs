@@ -76,7 +76,7 @@ impl TuringEngine<AA, AS, AL> for AdderEngine {
         self.last_state = machine.logic.get_start();
         print_state(self, machine, tape);
     }
-    fn new_state(&mut self, machine: &AdderMachine, tape: &Tape<AA>) {
+    fn new_state(&mut self, machine: &AdderMachine, tape: &Tape<AA>, _alt : Option<i128>) {
         print_state(self, machine, tape);
         self.last_state = machine.state.clone();
         sleep(Duration::from_millis(100));
