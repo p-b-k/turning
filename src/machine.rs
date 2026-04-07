@@ -54,9 +54,10 @@ where
         }
     }
 
-    fn advance(&mut self, tape: &mut Tape<A>) -> bool
+    fn advance<E>(&mut self, tape: &mut Tape<A>, eng: &mut E) -> bool
     where
         A: Clone,
+        E: TuringEngine<A, S, T>
     {
         let next = &tape.get(&self.position);
         match self.logic.do_trans(&self.state, next) {
@@ -69,6 +70,7 @@ where
                         self.position = self.position + 1;
                     }
                 }
+                eng.new_state(self, tape);
                 true
             }
             None => false,
@@ -80,8 +82,7 @@ where
         E: TuringEngine<A, S, T>,
         A: Clone,
     {
-        if self.advance(tape) {
-            eng.new_state(self, tape);
+        if self.advance(tape,eng) {
             self.run_to_end(tape, eng);
         } else {
             eng.finalize(self, tape);
