@@ -2,7 +2,7 @@
 // a pretty printing turing engine
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-use std::{marker::PhantomData, thread::sleep, time::Duration};
+use std::{fmt::Debug, marker::PhantomData, thread::sleep, time::Duration};
 
 use crate::{
     machine::{TuringEngine, TuringLogic, TuringMachine},
@@ -16,54 +16,71 @@ use ansi_term::{
     Style,
 };
 
-pub struct PrettyEngine<AL>
+pub struct PrettyEngine<L, S>
 where
-    AL: TuringLogic<char, usize>,
+    S: Clone,
+    S: PartialEq,
+    S: Debug,
+    L: TuringLogic<char, S>,
 {
-    phantom: PhantomData<AL>,
+    phantom_l: PhantomData<L>,
     pub sleep_time: u64,
-    pub last_state: usize,
+    pub last_state: S,
 }
 
-impl<AL> PrettyEngine<AL>
+impl<L, S> PrettyEngine<L, S>
 where
-    AL: TuringLogic<char, usize>,
+    S: Clone,
+    S: PartialEq,
+    S: Debug,
+    L: TuringLogic<char, S>,
 {
-    pub fn new() -> PrettyEngine<AL> {
+    pub fn new(last_state: S) -> PrettyEngine<L, S> {
         PrettyEngine {
+            phantom_l: PhantomData {},
             sleep_time: 100,
-            phantom: PhantomData {},
-            last_state: 0,
+            last_state,
         }
     }
 }
 
-impl<AL> TuringEngine<char, usize, AL> for PrettyEngine<AL>
+impl<L, S> TuringEngine<char, S, L> for PrettyEngine<L, S>
 where
-    AL: TuringLogic<char, usize>,
+    S: Clone,
+    S: PartialEq,
+    S: Debug,
+    L: TuringLogic<char, S>,
 {
-    fn init(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Tape<char>) {
+    fn init(&mut self, machine: &TuringMachine<char, S, L>, tape: &Tape<char>) {
         self.last_state = machine.logic.get_start();
         print_state(self, machine, tape, None);
         sleep(Duration::from_millis(self.sleep_time));
     }
 
-    fn new_state(&mut self, machine: &TuringMachine<char, usize, AL>, tape: &Tape<char>, alt : Option<i128>) {
+    fn new_state(
+        &mut self,
+        machine: &TuringMachine<char, S, L>,
+        tape: &Tape<char>,
+        alt: Option<i128>,
+    ) {
         print_state(self, machine, tape, alt);
         self.last_state = machine.state.clone();
         sleep(Duration::from_millis(self.sleep_time));
     }
 }
 
-fn print_state<AL>(
-    engine: &PrettyEngine<AL>,
-    machine: &TuringMachine<char, usize, AL>,
+fn print_state<L, S>(
+    engine: &PrettyEngine<L, S>,
+    machine: &TuringMachine<char, S, L>,
     tape: &Tape<char>,
-    alt : Option<i128>
+    alt: Option<i128>,
 ) where
-    AL: TuringLogic<char, usize>,
+    S: Clone,
+    S: PartialEq,
+    S: Debug,
+    L: TuringLogic<char, S>,
 {
-    let state_id = format!("{}", machine.state);
+    let state_id = format!("{:?}", machine.state);
 
     let new_state = &engine.last_state.clone() != &machine.state.clone();
 
@@ -95,7 +112,10 @@ fn print_state<AL>(
 
     for i in (l - 1)..(h + 2) {
         let is_pos = i == machine.position;
-        let is_alt = match alt { Some(x) => x == i, None => false };
+        let is_alt = match alt {
+            Some(x) => x == i,
+            None => false,
+        };
         let char_to_print = match tape.get(&i) {
             Some(c) => c.clone(),
             None => BLANK_CHAR,

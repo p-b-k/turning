@@ -6,9 +6,9 @@ use std::env;
 use std::fs::read_to_string;
 use std::io::{Read, stdin};
 
-use turing::dyn_machine::DynLogic;
 use turing::machine::{Dir, TuringMachine};
 use turing::pretty_engine::PrettyEngine;
+use turing::sym_machine::SymLogic;
 use turing::tape::Tape;
 
 const LOGIC_ROOT: &str = "logic";
@@ -57,18 +57,18 @@ fn main() {
     });
 
     // Now, create the Dynamic Logic ...
-    let mut logic = DynLogic::new();
+    let mut logic = SymLogic::new();
     logic.add_input('0');
     logic.add_input('1');
-    logic.add_final(4);
+    logic.add_final("q4".to_string());
 
     // ... and read it from the file.
     read_trans_from_file(&cfg, &mut logic);
 
     // Create the turning machine object
-    let mut machine: TuringMachine<char, usize, DynLogic> = TuringMachine::new(0, logic);
+    let mut machine: TuringMachine<char, String, SymLogic> = TuringMachine::new(0, logic);
 
-    let mut engine = PrettyEngine::new(0);
+    let mut engine = PrettyEngine::new("q1".to_string());
     engine.sleep_time = cfg.delay;
 
     machine.run(&mut tape, &mut engine);
@@ -86,7 +86,7 @@ enum PState {
     Out,
 }
 
-fn read_trans_from_file(cfg: &AppConfig, logic: &mut DynLogic) {
+fn read_trans_from_file(cfg: &AppConfig, logic: &mut SymLogic) {
     let file_data = read_to_string(cfg.file.as_str()).unwrap();
     let mut state = PState::Start;
 
@@ -113,10 +113,6 @@ fn read_trans_from_file(cfg: &AppConfig, logic: &mut DynLogic) {
                     size_str.push(next);
                 } else if next.is_whitespace() {
                     state = PState::Top;
-                    let size: usize = size_str.parse().unwrap();
-                    for _ in 0..size {
-                        logic.add_state();
-                    }
                 }
             }
             PState::Top => {
@@ -169,8 +165,8 @@ fn read_trans_from_file(cfg: &AppConfig, logic: &mut DynLogic) {
                     state = PState::Top;
 
                     // Finalize, add and reset
-                    let from_state: usize = from_str.parse().unwrap();
-                    let to_state: usize = to_str.parse().unwrap();
+                    let from_state: String = from_str.clone();
+                    let to_state: String = to_str.clone();
                     let dir = if left_trans { Dir::Left } else { Dir::Right };
                     logic.add_trans(from_state, &from_in, (to_state, to_out, dir));
                     from_str = String::new();
@@ -186,8 +182,8 @@ fn read_trans_from_file(cfg: &AppConfig, logic: &mut DynLogic) {
                 to_out = Some(next);
                 state = PState::Top;
                 // Finalize and reset
-                let from_state: usize = from_str.parse().unwrap();
-                let to_state: usize = to_str.parse().unwrap();
+                let from_state: String = from_str.clone();
+                let to_state: String = to_str.clone();
                 let dir = if left_trans { Dir::Left } else { Dir::Right };
                 logic.add_trans(from_state, &from_in, (to_state, to_out, dir));
                 from_str = String::new();
@@ -202,8 +198,8 @@ fn read_trans_from_file(cfg: &AppConfig, logic: &mut DynLogic) {
     match state {
         PState::Top => {}
         PState::To => {
-            let from_state: usize = from_str.parse().unwrap();
-            let to_state: usize = to_str.parse().unwrap();
+            let from_state: String = from_str.clone();
+            let to_state: String = to_str.clone();
             let dir = if left_trans { Dir::Left } else { Dir::Right };
             logic.add_trans(from_state, &from_in, (to_state, to_out, dir));
         }

@@ -24,6 +24,7 @@ where
     T: TuringLogic<A, S>,
     A: Clone,
     A: PartialEq,
+    S: Clone,
 {
     phantom_a: PhantomData<A>,
     pub logic: T,
@@ -35,10 +36,17 @@ pub trait TuringEngine<A, S, T>
 where
     T: TuringLogic<A, S>,
     A: Clone,
+    S: Clone,
     A: PartialEq,
 {
     fn init(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
-    fn new_state(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>, _altered :Option<i128>) {}
+    fn new_state(
+        &mut self,
+        _machine: &TuringMachine<A, S, T>,
+        _tape: &Tape<A>,
+        _altered: Option<i128>,
+    ) {
+    }
     fn finalize(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
 }
 
@@ -47,6 +55,7 @@ where
     T: TuringLogic<A, S>,
     A: Clone,
     A: PartialEq,
+    S: Clone,
 {
     pub fn new(position: i128, logic: T) -> TuringMachine<A, S, T> {
         TuringMachine {
@@ -60,7 +69,7 @@ where
     fn advance<E>(&mut self, tape: &mut Tape<A>, eng: &mut E) -> bool
     where
         A: Clone,
-        E: TuringEngine<A, S, T>
+        E: TuringEngine<A, S, T>,
     {
         let next = &tape.get(&self.position);
         match self.logic.do_trans(&self.state, next) {
@@ -74,7 +83,7 @@ where
                         self.position = self.position + 1;
                     }
                 }
-                eng.new_state(self, tape, if next != &c { Some(pos) } else {None});
+                eng.new_state(self, tape, if next != &c { Some(pos) } else { None });
                 true
             }
             None => false,
@@ -85,8 +94,9 @@ where
     where
         E: TuringEngine<A, S, T>,
         A: Clone,
+        S: Clone,
     {
-        if self.advance(tape,eng) {
+        if self.advance(tape, eng) {
             self.run_to_end(tape, eng);
         } else {
             eng.finalize(self, tape);
