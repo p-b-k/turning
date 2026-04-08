@@ -3,13 +3,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use std::env;
-use std::fs::read_to_string;
 use std::io::{Read, stdin};
 
-use turing::machine::{Dir, TuringMachine};
+use turing::machine::TuringMachine;
 use turing::pretty_engine::PrettyEngine;
 use turing::sym_machine::SymLogic;
 use turing::tape::Tape;
+use turing::tm_parser::read_transistion_file;
 
 const LOGIC_ROOT: &str = "logic";
 const DEFAULT_LOGIC: &str = "adder";
@@ -63,7 +63,7 @@ fn main() {
     logic.add_final("q4".to_string());
 
     // ... and read it from the file.
-    read_trans_from_file(&cfg, &mut logic);
+    read_transistion_file(cfg.file.as_str(), &mut logic);
 
     // Create the turning machine object
     let mut machine: TuringMachine<char, String, SymLogic> = TuringMachine::new(0, logic);
@@ -72,141 +72,6 @@ fn main() {
     engine.sleep_time = cfg.delay;
 
     machine.run(&mut tape, &mut engine);
-}
-
-#[derive(Debug)]
-enum PState {
-    Start,
-    Size,
-    Top,
-    From,
-    In,
-    Dir,
-    To,
-    Out,
-}
-
-fn read_trans_from_file(cfg: &AppConfig, logic: &mut SymLogic) {
-    let file_data = read_to_string(cfg.file.as_str()).unwrap();
-    let mut state = PState::Start;
-
-    let mut size_str = String::new();
-    let mut from_in: Option<char> = None;
-    let mut to_out: Option<char> = None;
-    let mut from_str = String::new();
-    let mut to_str = String::new();
-    let mut left_trans = false;
-
-    file_data.chars().for_each(|next| {
-        match state {
-            PState::Start => {
-                if next.is_whitespace() {
-                } else if next.is_digit(10) {
-                    size_str.push(next);
-                    state = PState::Size;
-                } else {
-                    panic!("Expected state count, found {next}");
-                }
-            }
-            PState::Size => {
-                if next.is_digit(10) {
-                    size_str.push(next);
-                } else if next.is_whitespace() {
-                    state = PState::Top;
-                }
-            }
-            PState::Top => {
-                if next.is_whitespace() {
-                } else if next.is_digit(10) {
-                    from_str.push(next);
-                    state = PState::From;
-                } else {
-                    panic!("Expecting state id, found {next:?}")
-                }
-            }
-            PState::From => {
-                if next.is_digit(10) {
-                    from_str.push(next);
-                } else if next == '.' {
-                    state = PState::In;
-                } else if next == '<' {
-                    left_trans = true;
-                    from_in = None;
-                    state = PState::To;
-                } else if next == '>' {
-                    left_trans = false;
-                    from_in = None;
-                    state = PState::To;
-                } else {
-                    panic!("Expected either a dot or an angle bracket, not {next}")
-                }
-            }
-            PState::In => {
-                from_in = Some(next);
-                state = PState::Dir;
-            }
-            PState::Dir => {
-                if next == '<' {
-                    left_trans = true;
-                } else if next == '>' {
-                    left_trans = false;
-                } else {
-                    panic!("Expected either '<' or '>', got {next}");
-                }
-                state = PState::To;
-            }
-            PState::To => {
-                if next.is_digit(10) {
-                    to_str.push(next);
-                } else if next == '.' {
-                    state = PState::Out;
-                } else if next.is_whitespace() {
-                    to_out = None;
-                    state = PState::Top;
-
-                    // Finalize, add and reset
-                    let from_state: String = from_str.clone();
-                    let to_state: String = to_str.clone();
-                    let dir = if left_trans { Dir::Left } else { Dir::Right };
-                    logic.add_trans(from_state, &from_in, (to_state, to_out, dir));
-                    from_str = String::new();
-                    from_in = None;
-                    to_str = String::new();
-                    to_out = None;
-                    left_trans = false;
-                } else {
-                    panic!("Expected either a dot or whitespace");
-                }
-            }
-            PState::Out => {
-                to_out = Some(next);
-                state = PState::Top;
-                // Finalize and reset
-                let from_state: String = from_str.clone();
-                let to_state: String = to_str.clone();
-                let dir = if left_trans { Dir::Left } else { Dir::Right };
-                logic.add_trans(from_state, &from_in, (to_state, to_out, dir));
-                from_str = String::new();
-                from_in = None;
-                to_str = String::new();
-                to_out = None;
-                left_trans = false;
-            }
-        }
-    });
-
-    match state {
-        PState::Top => {}
-        PState::To => {
-            let from_state: String = from_str.clone();
-            let to_state: String = to_str.clone();
-            let dir = if left_trans { Dir::Left } else { Dir::Right };
-            logic.add_trans(from_state, &from_in, (to_state, to_out, dir));
-        }
-        _ => {
-            panic!("Unexpected end state: {state:?}")
-        }
-    }
 }
 
 fn process_args(cfg: &mut AppConfig) {
