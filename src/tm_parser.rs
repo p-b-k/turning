@@ -37,6 +37,7 @@ pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
     let mut to_state = String::new();
     let mut is_left = false;
     let mut in_char: Option<char> = None;
+    let mut out_char: Option<char> = None;
 
     file_data.chars().for_each(|next| {
         debug!("Next char = {next:?} : State = {state:?}");
@@ -56,11 +57,9 @@ pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
                 from_state.push(next);
             } else if next.is_whitespace() || next == '{' {
                 data.insert(from_state.clone(), (false, Vec::new()));
-                from_state = String::new();
                 state = PState::BeforeBrace;
             } else if next == '!' {
                 data.insert(from_state.clone(), (true, Vec::new()));
-                from_state = String::new();
                 state = PState::BeforeBrace;
             } else {
                 panic!("Expecting state name character, got ({next})");
@@ -101,7 +100,7 @@ pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
             if next.is_alphanumeric() {
                 to_state.push(next);
             } else if next.is_whitespace() {
-                state = PState::BeforeDir;
+                state = PState::BeforeOut;
             } else {
                 panic!("Expecting state name character, got ({next})");
             }
@@ -119,8 +118,77 @@ pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
                 panic!("Expecting state name character, got ({next})");
             }
         }
-        PState::BeforeToState => {}
-        PState::BeforeOut => {}
-        PState::BeforeComma => {}
+        PState::BeforeToState => {
+            if next.is_whitespace() {
+                // Do Nothing
+            } else if next.is_alphabetic() {
+                to_state.push(next);
+                state = PState::InToState;
+            } else {
+                panic!("Expecting state name character, got ({next})");
+            }
+        }
+        PState::BeforeOut => {
+            if next.is_whitespace() {
+                // Do Nothing
+            } else if next == ',' {
+                out_char = None;
+                debug!("Creating trans for state {from_state} -> {to_state}");
+                let (_, v) = data.get_mut(&from_state).unwrap();
+                v.push(Trans {trans : to_state.clone(), dir : if is_left { Dir::Left} else {Dir::Right}, cell_in : in_char, cell_out : out_char});
+                to_state = String::new();
+                state = PState::BeforeTrans;
+            } else if next == '}' {
+                out_char = None;
+                debug!("Creating trans for state {from_state} -> {to_state}");
+                let (_, v) = data.get_mut(&from_state).unwrap();
+                v.push(Trans {trans : to_state.clone(), dir : if is_left { Dir::Left} else {Dir::Right}, cell_in : in_char, cell_out : out_char});
+                to_state = String::new();
+                from_state = String::new();
+                state = PState::Top;
+            } else if next.is_ascii_graphic() {
+                out_char = Some(next);
+                state = PState::BeforeComma;
+            } else {
+                panic!("Expecting state name character, got ({next})");
+            }
+        }
+        PState::BeforeComma => {
+            if next.is_whitespace() {
+                // Do Nothing
+            } else if next == ',' {
+                debug!("Creating trans for state {from_state} -> {to_state}");
+                let (_, v) = data.get_mut(&from_state).unwrap();
+                v.push(Trans {trans : to_state.clone(), dir : if is_left { Dir::Left} else {Dir::Right}, cell_in : in_char, cell_out : out_char});
+                to_state = String::new();
+                state = PState::BeforeTrans;
+            } else if next == '}' {
+                debug!("Creating trans for state {from_state} -> {to_state}");
+                let (_, v) = data.get_mut(&from_state).unwrap();
+                v.push(Trans {trans : to_state.clone(), dir : if is_left { Dir::Left} else {Dir::Right}, cell_in : in_char, cell_out : out_char});
+                to_state = String::new();
+                from_state = String::new();
+                state = PState::Top;
+            } else {
+                panic!("Expecting state name character, got ({next})");
+            }
+        }
     }});
+
+    match state {
+        PState::BeforeBrace => {
+            // Do Nothing
+        }
+        PState::Top => {
+            // Do Nothing
+        }
+        _ => {
+            panic!("Ended in unexpected state: {state:?}");
+        }
+    }
+
+    data.keys().for_each(|k| {
+        let (b, v) = data.get(k).unwrap();
+        debug!("is state {k} final? {b} ({})", v.len());
+    });
 }
