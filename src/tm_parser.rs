@@ -18,6 +18,9 @@ struct Trans {
 
 #[derive(Debug)]
 enum PState {
+    Start,         // Before Reading Alphabet
+    BeforeLetter,  // Expecting a letter
+    BeforeLetterSep, // Expecting a comma or a ]
     Top,           // Top level, outside all others
     InFromState,   // Reading the from state name
     BeforeBlock,   // Looking for state name
@@ -32,7 +35,7 @@ enum PState {
 
 pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
     let file_data = read_to_string(file).unwrap();
-    let mut state = PState::Top;
+    let mut state = PState::Start;
     let mut data: HashMap<String, (bool, Vec<Trans>)> = HashMap::new();
     let mut from_state = String::new();
     let mut to_state = String::new();
@@ -43,6 +46,39 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
     file_data.chars().for_each(|next| {
         debug!("Next char = {next:?} : State = {state:?}");
         match state {
+            PState::Start => {
+                if next.is_whitespace() {
+                    // Just keep going
+                } else if next == '[' {
+                    logic.add_input(next);
+                    state = PState::BeforeLetter;                    
+                } else {
+                    panic!("Expecting start of state name, got ({next})");
+                }
+                
+            }
+            PState::BeforeLetter => {
+                if next.is_whitespace() {
+                    // Just keep going
+                } else if next.is_ascii_graphic() {
+                    logic.add_input(next);
+                    state = PState::BeforeLetterSep;                    
+                } else {
+                    panic!("Expecting start of state name, got ({next})");
+                }
+                
+            }
+            PState::BeforeLetterSep => {
+                if next.is_whitespace() {
+                } else if next == ',' {
+                    state = PState::BeforeLetter;                    
+                } else if next == ']' {
+                    state = PState::Top;                    
+                } else {
+                    panic!("Expecting start of state name, got ({next})");
+                }
+                
+            }
         PState::Top => {
             if next.is_whitespace() {
                 // Just keep going
@@ -192,11 +228,10 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
     data.keys().for_each(|k| {
         let (b, v) = data.get(k).unwrap();
         debug!("is state {k} final? {b} ({})", v.len());
-        v.iter().for_each(|i| debug!("  {i:?}"));
+        v.iter().for_each(|i| debug!("{k}  {i:?}"));
     });
 
     for (s, (f, t)) in data.iter() {
-        println!("Hello World");
         logic.add_state(s.clone(), f.clone());
         t.iter().for_each(|t| {
             logic.add_trans(&s, &t.cell_in, (t.trans.clone(), t.cell_out, t.dir.clone()))

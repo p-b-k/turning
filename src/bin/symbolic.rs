@@ -59,8 +59,8 @@ fn main() {
 
     // Now, create the Dynamic Logic ...
     let mut logic = SymLogic::new();
-    logic.add_input('0');
-    logic.add_input('1');
+    // logic.add_input('0');
+    // logic.add_input('1');
     // logic.add_final("q4".to_string());
 
     // ... and read it from the file.
