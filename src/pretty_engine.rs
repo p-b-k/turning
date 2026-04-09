@@ -14,9 +14,9 @@ use crate::{
     tape::Tape,
 };
 
-use log::debug;
+const BLANK_CODE: u32 = 0x26f6;
 
-const BLANK_CHAR: char = char::from_u32(9676).unwrap();
+const BLANK_CHAR: char = char::from_u32(BLANK_CODE).unwrap();
 
 use ansi_term::{
     Color::{Blue, Green, Red, Yellow},
@@ -96,7 +96,6 @@ fn print_state<L, S>(
     let new_state = &engine.last_state.clone() != &machine.state.clone();
 
     if machine.logic.is_final(&machine.state) {
-        debug!("state = {}", machine.state);
         if new_state {
             print!(
                 "{}",

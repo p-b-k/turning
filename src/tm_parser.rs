@@ -177,6 +177,10 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
                 } else if next.is_alphabetic() {
                     to_state.push(next);
                     state = PState::InToState;
+                } else if next == '_' {
+                    to_state = from_state.clone();
+                    out_char = in_char.clone();
+                    state = PState::BeforeComma;
                 } else {
                     panic!("Expecting state name character, got ({next})");
                 }
@@ -209,6 +213,9 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
                     to_state = String::new();
                     from_state = String::new();
                     state = PState::Top;
+                } else if next == '_' {
+                    out_char = in_char.clone();
+                    state = PState::BeforeComma;
                 } else if next.is_ascii_graphic() {
                     out_char = Some(next);
                     state = PState::BeforeComma;
