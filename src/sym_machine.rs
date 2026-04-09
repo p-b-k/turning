@@ -26,24 +26,27 @@ impl SymLogic {
         self.valid_input.push(c);
     }
 
-    pub fn add_final(&mut self, s: String) {
-        self.final_states.push(s);
+    pub fn add_state(&mut self, s: String, is_final: bool) {
+        self.transitions.insert(s.clone(), HashMap::new());
+        if is_final {
+            self.final_states.push(s);
+        }
     }
 
     pub fn add_trans(
         &mut self,
-        state: String,
+        state: &String,
         input: &Option<char>,
         result: (String, Option<char>, Dir),
     ) {
-        match self.transitions.get_mut(&state) {
+        match self.transitions.get_mut(state) {
             Some (m) => {
                 m.insert(input.clone(), result);
             }
             None => {
                 let mut m = HashMap::new();
                 m.insert(input.clone(), result);
-                self.transitions.insert(state, m);
+                self.transitions.insert(state.clone(), m);
             }
         }
     }

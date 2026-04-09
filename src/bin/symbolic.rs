@@ -61,7 +61,7 @@ fn main() {
     let mut logic = SymLogic::new();
     logic.add_input('0');
     logic.add_input('1');
-    logic.add_final("q4".to_string());
+    // logic.add_final("q4".to_string());
 
     // ... and read it from the file.
     read_transistion_file(cfg.file.as_str(), &mut logic);

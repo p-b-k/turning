@@ -8,6 +8,7 @@ use crate::{machine::Dir, sym_machine::SymLogic};
 
 use log::debug;
 
+#[derive(Debug)]
 struct Trans {
     pub trans: String,
     pub dir: Dir,
@@ -29,7 +30,7 @@ enum PState {
     BeforeComma,   // Looking for , or }
 }
 
-pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
+pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
     let file_data = read_to_string(file).unwrap();
     let mut state = PState::Top;
     let mut data: HashMap<String, (bool, Vec<Trans>)> = HashMap::new();
@@ -187,8 +188,18 @@ pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
         }
     }
 
+    // Just print the data
     data.keys().for_each(|k| {
         let (b, v) = data.get(k).unwrap();
         debug!("is state {k} final? {b} ({})", v.len());
+        v.iter().for_each(|i| debug!("  {i:?}"));
     });
+
+    for (s, (f, t)) in data.iter() {
+        println!("Hello World");
+        logic.add_state(s.clone(), f.clone());
+        t.iter().for_each(|t| {
+            logic.add_trans(&s, &t.cell_in, (t.trans.clone(), t.cell_out, t.dir.clone()))
+        });
+    }
 }
