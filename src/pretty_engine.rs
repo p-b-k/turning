@@ -9,7 +9,7 @@ use crate::{
     tape::Tape,
 };
 
-const BLANK_CHAR: char = ' ';
+const BLANK_CHAR: char = char::from_u32(9642).unwrap();
 
 use ansi_term::{
     Color::{Blue, Green, Red, Yellow},
