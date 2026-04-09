@@ -2,12 +2,19 @@
 // a pretty printing turing engine
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-use std::{fmt::Debug, marker::PhantomData, thread::sleep, time::Duration};
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    thread::sleep,
+    time::Duration,
+};
 
 use crate::{
     machine::{TuringEngine, TuringLogic, TuringMachine},
     tape::Tape,
 };
+
+use log::debug;
 
 const BLANK_CHAR: char = char::from_u32(9676).unwrap();
 
@@ -21,6 +28,7 @@ where
     S: Clone,
     S: PartialEq,
     S: Debug,
+    S: Display,
     L: TuringLogic<char, S>,
 {
     phantom_l: PhantomData<L>,
@@ -33,6 +41,7 @@ where
     S: Clone,
     S: PartialEq,
     S: Debug,
+    S: Display,
     L: TuringLogic<char, S>,
 {
     pub fn new(last_state: S) -> PrettyEngine<L, S> {
@@ -49,6 +58,7 @@ where
     S: Clone,
     S: PartialEq,
     S: Debug,
+    S: Display,
     L: TuringLogic<char, S>,
 {
     fn init(&mut self, machine: &TuringMachine<char, S, L>, tape: &Tape<char>) {
@@ -78,13 +88,15 @@ fn print_state<L, S>(
     S: Clone,
     S: PartialEq,
     S: Debug,
+    S: Display,
     L: TuringLogic<char, S>,
 {
-    let state_id = format!("{:?}", machine.state);
+    let state_id = format!("{}", machine.state);
 
     let new_state = &engine.last_state.clone() != &machine.state.clone();
 
     if machine.logic.is_final(&machine.state) {
+        debug!("state = {}", machine.state);
         if new_state {
             print!(
                 "{}",
@@ -134,7 +146,7 @@ fn print_state<L, S>(
                     "{}",
                     Style::new()
                         .reverse()
-                        .paint(format!("{}", Green.paint(format!("{}", char_to_print))))
+                        .paint(format!("{}", Red.paint(format!("{}", char_to_print))))
                 );
             } else {
                 print!("{}", Blue.paint(format!("{}", char_to_print)));

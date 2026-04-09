@@ -8,7 +8,7 @@ use std::io::{Read, stdin};
 use turing::machine::TuringMachine;
 use turing::pretty_engine::PrettyEngine;
 use turing::sym_machine::SymLogic;
-use turing::tape::Tape;
+use turing::tape::{Tape, from_vec};
 use turing::tm_parser::read_transistion_file;
 
 const LOGIC_ROOT: &str = "logic";
@@ -36,32 +36,13 @@ fn main() {
 
     process_args(&mut cfg);
 
-    // Create the imput tape vector ...
-    let mut tape: Tape<char> = Tape::new();
-
-    // ... and set it up reading from stdin
+    // Read the file into a vector and convert it into a tape
     let mut buf: Vec<u8> = Vec::new();
     stdin().read_to_end(&mut buf).unwrap();
-
-    let mut i: i128 = 0;
-    buf.iter().for_each(|u| {
-        tape.set(
-            &i,
-            if u.is_ascii_whitespace() {
-                None
-            } else {
-                Some(u.clone() as char)
-            },
-        );
-
-        i = i + 1;
-    });
+    let mut tape: Tape<char> = from_vec(&buf, |u| u.clone() as char);
 
     // Now, create the Dynamic Logic ...
     let mut logic = SymLogic::new();
-    // logic.add_input('0');
-    // logic.add_input('1');
-    // logic.add_final("q4".to_string());
 
     // ... and read it from the file.
     read_transistion_file(cfg.file.as_str(), &mut logic);

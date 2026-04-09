@@ -72,3 +72,28 @@ where
         self.map.values()
     }
 }
+
+pub fn from_vec<A>(buf: &Vec<u8>, conv: fn(&u8) -> A) -> Tape<A>
+where
+    A: Clone,
+{
+    let mut i: i128 = 0;
+    let mut tape: Tape<A> = Tape {
+        map: HashMap::new(),
+    };
+
+    buf.iter().for_each(|u| {
+        tape.set(
+            &i,
+            if u.is_ascii_whitespace() {
+                None
+            } else {
+                Some(conv(u))
+            },
+        );
+
+        i = i + 1;
+    });
+
+    tape
+}
