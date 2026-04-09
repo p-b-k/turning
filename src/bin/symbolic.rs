@@ -21,7 +21,7 @@ struct AppConfig {
 
 impl AppConfig {
     pub fn new() -> AppConfig {
-        let file = format!("{LOGIC_ROOT}/{DEFAULT_LOGIC}.otm");
+        let file = format!("{LOGIC_ROOT}/{DEFAULT_LOGIC}.tm");
         AppConfig {
             file: String::from(file),
             delay: 1000,
@@ -30,6 +30,7 @@ impl AppConfig {
 }
 
 fn main() {
+    env_logger::init();
     // Create the application data structure
     let mut cfg = AppConfig::new();
 
@@ -81,7 +82,7 @@ fn process_args(cfg: &mut AppConfig) {
     while i < args.len() {
         if args[i] == "--logic" {
             i = i + 1;
-            cfg.file = format!("{LOGIC_ROOT}/{}.otm", args[i]);
+            cfg.file = format!("{LOGIC_ROOT}/{}.tm", args[i]);
         } else if args[i] == "--delay" {
             i = i + 1;
             cfg.delay = args[i].parse().unwrap();

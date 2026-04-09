@@ -6,6 +6,8 @@ use std::{collections::HashMap, fs::read_to_string};
 
 use crate::{machine::Dir, sym_machine::SymLogic};
 
+use log::debug;
+
 struct Trans {
     pub trans: String,
     pub dir: Dir,
@@ -13,6 +15,7 @@ struct Trans {
     pub cell_out: Option<char>,
 }
 
+#[derive(Debug)]
 enum PState {
     Top,           // Top level, outside all others
     InFromState,   // Reading the from state name
@@ -35,7 +38,9 @@ pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
     let mut is_left = false;
     let mut in_char: Option<char> = None;
 
-    file_data.chars().for_each(|next| match state {
+    file_data.chars().for_each(|next| {
+        debug!("Next char = {next:?} : State = {state:?}");
+        match state {
         PState::Top => {
             if next.is_whitespace() {
                 // Just keep going
@@ -66,6 +71,7 @@ pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
             if next.is_whitespace() {
                 // Just keep going
             } else if next == '{' {
+                state = PState::BeforeTrans;
             } else if next.is_alphabetic() {
                 // No transitions out of this state, so start a new set
                 state = PState::InFromState;
@@ -101,7 +107,9 @@ pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
             }
         }
         PState::BeforeDir => {
-            if next == '<' {
+            if next.is_whitespace() {
+                // Do Nothing
+            } else if next == '<' {
                 is_left = true;
                 state = PState::BeforeToState;
             } else if next == '>' {
@@ -114,5 +122,5 @@ pub fn read_transistion_file(file: &str, _logic: &mut SymLogic) {
         PState::BeforeToState => {}
         PState::BeforeOut => {}
         PState::BeforeComma => {}
-    });
+    }});
 }
