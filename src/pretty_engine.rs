@@ -14,7 +14,7 @@ use crate::{
     tape::Tape,
 };
 
-const BLANK_CODE: u32 = 0x26f6;
+const BLANK_CODE: u32 = 0x26ac;
 
 const BLANK_CHAR: char = char::from_u32(BLANK_CODE).unwrap();
 
