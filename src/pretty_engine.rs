@@ -33,7 +33,7 @@ where
 {
     phantom_l: PhantomData<L>,
     pub sleep_time: u64,
-    pub last_state: S,
+    pub last_state: Option<S>,
 }
 
 impl<L, S> PrettyEngine<L, S>
@@ -44,11 +44,11 @@ where
     S: Display,
     L: TuringLogic<char, S>,
 {
-    pub fn new(last_state: S) -> PrettyEngine<L, S> {
+    pub fn new() -> PrettyEngine<L, S> {
         PrettyEngine {
             phantom_l: PhantomData {},
             sleep_time: 100,
-            last_state,
+            last_state: None,
         }
     }
 }
@@ -62,7 +62,7 @@ where
     L: TuringLogic<char, S>,
 {
     fn init(&mut self, machine: &TuringMachine<char, S, L>, tape: &Tape<char>) {
-        self.last_state = machine.logic.get_start();
+        self.last_state = Some(machine.state.clone());
         print_state(self, machine, tape, None);
         sleep(Duration::from_millis(self.sleep_time));
     }
@@ -74,7 +74,7 @@ where
         alt: Option<i128>,
     ) {
         print_state(self, machine, tape, alt);
-        self.last_state = machine.state.clone();
+        self.last_state = Some(machine.state.clone());
         sleep(Duration::from_millis(self.sleep_time));
     }
 }
@@ -93,7 +93,10 @@ fn print_state<L, S>(
 {
     let state_id = format!("{}", machine.state);
 
-    let new_state = &engine.last_state.clone() != &machine.state.clone();
+    let new_state = match &engine.last_state {
+        Some(c) => c != &machine.state.clone(),
+        None => false,
+    };
 
     if machine.logic.is_final(&machine.state) {
         if new_state {
