@@ -4,7 +4,7 @@
 
 use std::env;
 
-use turing::machine::TuringMachine;
+use turing::machine::{TuringEngine, TuringMachine};
 use turing::pretty_engine::PrettyEngine;
 use turing::sym_machine::SymLogic;
 use turing::tape::Tape;
@@ -17,6 +17,7 @@ struct AppConfig {
     pub file: String,
     pub delay: u64,
     pub operands: Vec<u64>,
+    pub show_vm: bool,
 }
 
 impl AppConfig {
@@ -26,9 +27,14 @@ impl AppConfig {
             file: String::from(file),
             delay: 1000,
             operands: Vec::new(),
+            show_vm: true,
         }
     }
 }
+
+struct NullEngine {}
+
+impl TuringEngine<char, String, SymLogic> for NullEngine {}
 
 fn main() {
     env_logger::init();
@@ -65,13 +71,36 @@ fn main() {
 
     let max_state_size = logic.max_state_size();
 
-    let mut engine = PrettyEngine::new(max_state_size);
-    engine.sleep_time = cfg.delay;
-
     // Create the turning machine object
     let mut machine: TuringMachine<char, String, SymLogic> = TuringMachine::new(0, logic);
 
-    machine.run(&mut tape, &mut engine);
+    if cfg.show_vm {
+        let mut engine = PrettyEngine::new(max_state_size);
+        engine.sleep_time = cfg.delay;
+
+        machine.run(&mut tape, &mut engine);
+    } else {
+        let mut engine = NullEngine {};
+
+        machine.run(&mut tape, &mut engine);
+    }
+
+    let start = machine.position.clone();
+    let mut cnt = 0;
+    loop {
+        match tape.get(&(start + cnt)) {
+            Some(c) => {
+                if c == '1' {
+                    cnt = cnt + 1;
+                } else {
+                    break;
+                }
+            }
+            None => break,
+        }
+    }
+
+    println!("{cnt}");
 }
 
 fn process_args(cfg: &mut AppConfig) {
@@ -85,6 +114,8 @@ fn process_args(cfg: &mut AppConfig) {
         } else if args[i] == "--delay" {
             i = i + 1;
             cfg.delay = args[i].parse().unwrap();
+        } else if args[i] == "--quiet" {
+            cfg.show_vm = false;
         } else {
             // panic!("Unknown argument '{}'", args[i]);
             let num: u64 = args[i].parse().unwrap();

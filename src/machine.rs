@@ -32,6 +32,14 @@ where
     pub position: i128,
 }
 
+#[derive(Debug, Clone)]
+pub enum AltType {
+    None,
+    Alter(i128),
+    Add(i128),
+    Clear(i128),
+}
+
 pub trait TuringEngine<A, S, T>
 where
     T: TuringLogic<A, S>,
@@ -40,12 +48,7 @@ where
     A: PartialEq,
 {
     fn init(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
-    fn new_state(
-        &mut self,
-        _machine: &TuringMachine<A, S, T>,
-        _tape: &Tape<A>,
-        _altered: Option<i128>,
-    ) {
+    fn new_state(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>, _altered: AltType) {
     }
     fn finalize(&mut self, _machine: &TuringMachine<A, S, T>, _tape: &Tape<A>) {}
 }
@@ -83,7 +86,22 @@ where
                         self.position = self.position + 1;
                     }
                 }
-                eng.new_state(self, tape, if next != &c { Some(pos) } else { None });
+                eng.new_state(
+                    self,
+                    tape,
+                    match (next, &c) {
+                        (None, None) => AltType::None,
+                        (Some(_), None) => AltType::Clear(pos),
+                        (None, Some(_)) => AltType::Add(pos),
+                        (Some(a), Some(b)) => {
+                            if a == b {
+                                AltType::None
+                            } else {
+                                AltType::Alter(pos)
+                            }
+                        }
+                    },
+                );
                 true
             }
             None => false,
@@ -96,11 +114,8 @@ where
         A: Clone,
         S: Clone,
     {
-        if self.advance(tape, eng) {
-            self.run_to_end(tape, eng);
-        } else {
-            eng.finalize(self, tape);
-        }
+        while self.advance(tape, eng) {}
+        eng.finalize(self, tape);
     }
 
     pub fn run<E>(&mut self, tape: &mut Tape<A>, eng: &mut E)

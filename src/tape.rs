@@ -9,7 +9,7 @@ where
     A: Clone,
 {
     map: HashMap<i128, A>,
-    bounds: Option<(i128, i128)>,
+    pub bounds: Option<(i128, i128)>,
 }
 
 impl<A> Tape<A>
@@ -69,7 +69,7 @@ where
         }
     }
 
-    pub fn bounds(&self) -> Option<(i128, i128)> {
+    fn bounds(&self) -> Option<(i128, i128)> {
         let mut bounds: Option<(i128, i128)> = None;
 
         for key in self.map.keys() {

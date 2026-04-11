@@ -10,7 +10,7 @@ use ansi_term::{
 };
 
 use turing::{
-    machine::{Dir, TuringEngine, TuringLogic, TuringMachine},
+    machine::{AltType, Dir, TuringEngine, TuringLogic, TuringMachine},
     tape::Tape,
 };
 
@@ -76,7 +76,7 @@ impl TuringEngine<AA, AS, AL> for AdderEngine {
         self.last_state = machine.logic.get_start();
         print_state(self, machine, tape);
     }
-    fn new_state(&mut self, machine: &AdderMachine, tape: &Tape<AA>, _alt : Option<i128>) {
+    fn new_state(&mut self, machine: &AdderMachine, tape: &Tape<AA>, _alt: AltType) {
         print_state(self, machine, tape);
         self.last_state = machine.state.clone();
         sleep(Duration::from_millis(100));
@@ -123,7 +123,7 @@ fn print_state(engine: &AdderEngine, machine: &AdderMachine, tape: &Tape<AA>) {
         }
     }
 
-    let (l, h) = tape.bounds().unwrap();
+    let (l, h) = tape.bounds.unwrap();
 
     for i in (l - 1)..(h + 2) {
         let is_pos = i == machine.position;
@@ -181,7 +181,7 @@ pub fn main() {
 }
 
 fn print_tape(tape: &Tape<AA>) {
-    let (l, h) = tape.bounds().unwrap();
+    let (l, h) = tape.bounds.unwrap();
 
     for i in (l - 1)..(h + 1) {
         match tape.get(&i) {
