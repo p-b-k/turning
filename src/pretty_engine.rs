@@ -14,14 +14,14 @@ use crate::{
     tape::Tape,
 };
 
+use ansi_term::{
+    Color::{Black, Blue, Cyan, Green, Red, White, Yellow},
+    Style,
+};
+
 const BLANK_CODE: u32 = 0x26ac;
 
 const BLANK_CHAR: char = char::from_u32(BLANK_CODE).unwrap();
-
-use ansi_term::{
-    Color::{Blue, Green, Red, Yellow},
-    Style,
-};
 
 pub struct PrettyEngine<L, S>
 where
@@ -147,8 +147,8 @@ fn print_state<L, S>(
                 print!(
                     "{}",
                     Style::new()
-                        .reverse()
-                        .paint(format!("{}", Red.paint(format!("{}", char_to_print))))
+                        .bold()
+                        .paint(format!("{}", Red.paint(char_to_print.to_string())))
                 );
             } else {
                 print!("{}", Blue.paint(format!("{}", char_to_print)));

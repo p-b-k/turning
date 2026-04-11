@@ -63,7 +63,9 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
     let mut in_char: Option<char> = None;
     let mut out_char: Option<char> = None;
 
-    file_data.chars().for_each(|next| {
+    let clean_data = strip_comments(&file_data);
+
+    clean_data.chars().for_each(|next| {
         debug!("Next char = {next:?} : State = {state:?}");
         match state {
             PState::Start => {
@@ -281,4 +283,32 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
             logic.add_trans(&s, &t.cell_in, (t.trans.clone(), t.cell_out, t.dir.clone()))
         });
     }
+}
+
+fn strip_comments(data: &String) -> String {
+    let mut result = String::new();
+    let mut in_comment = false;
+
+    let mut i = 0;
+    for c in data.chars() {
+        if in_comment {
+            if c == '\n' {
+                in_comment = false;
+                result.push(c);
+            } else {
+                result.push(' ');
+            }
+        } else {
+            if c == '#' {
+                in_comment = true;
+                result.push(' ');
+            } else {
+                result.push(c);
+            }
+        }
+
+        i = i + 1;
+    }
+
+    result
 }
