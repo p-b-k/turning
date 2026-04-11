@@ -2,7 +2,6 @@
 // Try a generic loader that reads the tape from the input
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 use std::collections::HashMap;
 
 use crate::machine::{Dir, TuringLogic};
@@ -33,6 +32,18 @@ impl SymLogic {
         }
     }
 
+    pub fn max_state_size(&self) -> usize {
+        let mut val: usize = 0;
+
+        self.transitions.keys().for_each(|k| {
+            if k.len() > val {
+                val = k.len();
+            }
+        });
+
+        val
+    }
+
     pub fn add_trans(
         &mut self,
         state: &String,
@@ -40,7 +51,7 @@ impl SymLogic {
         result: (String, Option<char>, Dir),
     ) {
         match self.transitions.get_mut(state) {
-            Some (m) => {
+            Some(m) => {
                 m.insert(input.clone(), result);
             }
             None => {
@@ -57,14 +68,18 @@ impl SymLogic {
         input: &Option<char>,
     ) -> Option<&(String, Option<char>, Dir)> {
         match self.transitions.get(&state) {
-            Some(m) => {m.get(&input)}
-            None => None
+            Some(m) => m.get(&input),
+            None => None,
         }
     }
 }
 
 impl TuringLogic<char, String> for SymLogic {
-    fn do_trans(&self, state: &String, input: &Option<char>) -> Option<(String, Option<char>, Dir)> {
+    fn do_trans(
+        &self,
+        state: &String,
+        input: &Option<char>,
+    ) -> Option<(String, Option<char>, Dir)> {
         match self.get_trans(state.clone(), input) {
             Some((s, o, d)) => Some((s.clone(), o.clone(), d.clone())),
             None => None,

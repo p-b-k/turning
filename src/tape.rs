@@ -9,6 +9,7 @@ where
     A: Clone,
 {
     map: HashMap<i128, A>,
+    bounds: Option<(i128, i128)>,
 }
 
 impl<A> Tape<A>
@@ -18,6 +19,7 @@ where
     pub fn new() -> Tape<A> {
         Tape {
             map: HashMap::new(),
+            bounds: None,
         }
     }
 
@@ -35,12 +37,34 @@ where
     where
         A: Clone,
     {
+        let k = key.clone();
+
         match val {
             Some(c) => {
                 self.map.insert(key.clone(), c);
+                match self.bounds {
+                    Some((l, h)) => {
+                        if k < l {
+                            self.bounds = Some((k, h))
+                        } else if k > h {
+                            self.bounds = Some((l, k))
+                        }
+                    }
+                    None => self.bounds = Some((k.clone(), k)),
+                }
             }
             None => {
                 self.map.remove(key);
+                match self.bounds {
+                    Some((l, h)) => {
+                        if k == l || k == h {
+                            self.bounds = self.bounds();
+                        }
+                    }
+                    None => {
+                        // Can't get here I shouldn't think
+                    }
+                }
             }
         }
     }
@@ -80,6 +104,7 @@ where
     let mut i: i128 = 0;
     let mut tape: Tape<A> = Tape {
         map: HashMap::new(),
+        bounds: None,
     };
 
     buf.iter().for_each(|u| {

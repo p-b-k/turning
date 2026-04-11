@@ -15,7 +15,7 @@ use crate::{
 };
 
 use ansi_term::{
-    Color::{Black, Blue, Cyan, Green, Red, White, Yellow},
+    Color::{Blue, Green, Red, Yellow},
     Style,
 };
 
@@ -34,6 +34,7 @@ where
     phantom_l: PhantomData<L>,
     pub sleep_time: u64,
     pub last_state: Option<S>,
+    pub max_state_len: usize,
 }
 
 impl<L, S> PrettyEngine<L, S>
@@ -44,11 +45,12 @@ where
     S: Display,
     L: TuringLogic<char, S>,
 {
-    pub fn new() -> PrettyEngine<L, S> {
+    pub fn new(max_state_len: usize) -> PrettyEngine<L, S> {
         PrettyEngine {
             phantom_l: PhantomData {},
             sleep_time: 100,
             last_state: None,
+            max_state_len: max_state_len,
         }
     }
 }
@@ -98,31 +100,36 @@ fn print_state<L, S>(
         None => false,
     };
 
+    // let width: usize = 40 + engine.max_state_len;
+    let width: usize = 8;
     if machine.logic.is_final(&machine.state) {
         if new_state {
             print!(
-                "{}",
+                "{} ",
                 Style::new()
                     .bold()
-                    .paint(format!("{} ", Green.paint(state_id)))
+                    .paint(format!("{:width$}", Green.paint(state_id)))
             );
         } else {
-            print!("{} ", Green.paint(state_id));
+            print!("{:8} ", Green.paint(state_id));
         }
     } else {
         if new_state {
             print!(
-                "{}",
+                "{:8} ",
                 Style::new()
                     .bold()
-                    .paint(format!("{} ", Red.paint(state_id)))
+                    .paint(format!("{}", Red.paint(state_id)))
             );
         } else {
-            print!("{} ", Red.paint(state_id));
+            print!("{:8} ", Red.paint(state_id));
         }
     }
 
-    let (l, h) = tape.bounds().unwrap();
+    let (l, h) = match tape.bounds() {
+        Some(x) => x,
+        None => (0, 0),
+    };
 
     for i in (l - 1)..(h + 2) {
         let is_pos = i == machine.position;

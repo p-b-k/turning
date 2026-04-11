@@ -47,10 +47,12 @@ fn main() {
     // ... and read it from the file.
     read_transistion_file(cfg.file.as_str(), &mut logic);
 
+    let max_state_size = logic.max_state_size();
+
     // Create the turning machine object
     let mut machine: TuringMachine<char, String, SymLogic> = TuringMachine::new(0, logic);
 
-    let mut engine = PrettyEngine::new();
+    let mut engine = PrettyEngine::new(max_state_size);
     engine.sleep_time = cfg.delay;
 
     machine.run(&mut tape, &mut engine);

@@ -63,7 +63,9 @@ fn main() {
     // ... and read it from the file.
     read_transistion_file(cfg.file.as_str(), &mut logic);
 
-    let mut engine = PrettyEngine::new();
+    let max_state_size = logic.max_state_size();
+
+    let mut engine = PrettyEngine::new(max_state_size);
     engine.sleep_time = cfg.delay;
 
     // Create the turning machine object

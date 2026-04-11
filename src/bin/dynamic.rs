@@ -68,7 +68,7 @@ fn main() {
     // Create the turning machine object
     let mut machine: TuringMachine<char, usize, DynLogic> = TuringMachine::new(0, logic);
 
-    let mut engine = PrettyEngine::new();
+    let mut engine = PrettyEngine::new(8);
     engine.sleep_time = cfg.delay;
 
     machine.run(&mut tape, &mut engine);
