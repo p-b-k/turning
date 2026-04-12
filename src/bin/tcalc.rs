@@ -27,7 +27,7 @@ impl AppConfig {
             file: String::from(file),
             delay: 1000,
             operands: Vec::new(),
-            show_vm: true,
+            show_vm: false,
         }
     }
 }
@@ -124,8 +124,8 @@ fn process_args(cfg: &mut AppConfig) {
         } else if args[i] == "--delay" {
             i = i + 1;
             cfg.delay = args[i].parse().unwrap();
-        } else if args[i] == "--quiet" {
-            cfg.show_vm = false;
+        } else if args[i] == "--show" {
+            cfg.show_vm = true;
         } else {
             // panic!("Unknown argument '{}'", args[i]);
             let num: u64 = args[i].parse().unwrap();
