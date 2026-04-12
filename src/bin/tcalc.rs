@@ -43,6 +43,13 @@ fn main() {
 
     process_args(&mut cfg);
 
+    match cfg.operands.len() {
+        0 => panic!("Two operands are required"),
+        1 => panic!("Exactly two operatnds are required"),
+        2 => {}
+        _ => panic!("Too many operands, exactly two (numeric) operands required"),
+    }
+
     // Create the tape and read the operands in unarry format
     let mut tape: Tape<char> = Tape::new();
     let mut first = true;
@@ -100,7 +107,10 @@ fn main() {
         }
     }
 
-    println!("{cnt}");
+    println!(
+        "With logic from {} on ({}, {}), the result is '{cnt}' (in {:?} steps)",
+        cfg.file, cfg.operands[0], cfg.operands[1], machine.step_cnt
+    );
 }
 
 fn process_args(cfg: &mut AppConfig) {

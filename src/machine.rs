@@ -30,6 +30,7 @@ where
     pub logic: T,
     pub state: S,
     pub position: i128,
+    pub step_cnt: u128,
 }
 
 #[derive(Debug, Clone)]
@@ -66,6 +67,7 @@ where
             state: logic.get_start(),
             logic,
             position,
+            step_cnt: 0,
         }
     }
 
@@ -75,7 +77,9 @@ where
         E: TuringEngine<A, S, T>,
     {
         let next = &tape.get(&self.position);
-        match self.logic.do_trans(&self.state, next) {
+        let trans_out = self.logic.do_trans(&self.state, next);
+        self.step_cnt = self.step_cnt + 1;
+        match trans_out {
             Some((s, c, d)) => {
                 let pos = self.position;
                 tape.set(&pos, c.clone());
@@ -123,14 +127,8 @@ where
         E: TuringEngine<A, S, T>,
         A: Debug,
     {
-        // tape.iter().for_each(|x| match x {
-        //     Some(c) => {
-        //         if !self.logic.is_valid(c) {
-        //             panic!("Invalid input on tape ({c:?})");
-        //         }
-        //     }
-        //     None => {}
-        // });
+        self.step_cnt = 0;
+
         for e in tape.values() {
             if !self.logic.is_valid(e) {
                 panic!("Invalid input character ({e:?})");
