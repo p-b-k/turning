@@ -112,9 +112,11 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
                 if next.is_alphanumeric() {
                     from_state.push(next);
                 } else if next.is_whitespace() || next == '{' {
+                    debug!("Adding New State {from_state} (final? No))");
                     data.insert(from_state.clone(), (false, Vec::new()));
                     state = PState::BeforeBrace;
                 } else if next == '!' {
+                    debug!("Adding New State {from_state} (final? Yes))");
                     data.insert(from_state.clone(), (true, Vec::new()));
                     state = PState::BeforeBrace;
                 } else {
@@ -128,6 +130,7 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
                     state = PState::BeforeTrans;
                 } else if next.is_alphabetic() {
                     // No transitions out of this state, so start a new set
+                    from_state = next.to_string();
                     state = PState::InFromState;
                 } else {
                     panic!("Expecting state name character, got ({next})");
@@ -182,6 +185,7 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
                 } else if next == '_' {
                     to_state = from_state.clone();
                     out_char = in_char.clone();
+                    debug!("from_state = {from_state}, to_state = {to_state}");
                     state = PState::BeforeComma;
                 } else {
                     panic!("Expecting state name character, got ({next})");
@@ -192,7 +196,7 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
                     // Do Nothing
                 } else if next == ',' {
                     out_char = None;
-                    debug!("Creating trans for state {from_state} -> {to_state}");
+                    debug!("(A) Creating trans for state {from_state} -> {to_state}");
                     let (_, v) = data.get_mut(&from_state).unwrap();
                     v.push(Trans {
                         trans: to_state.clone(),
@@ -204,7 +208,7 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
                     state = PState::BeforeTrans;
                 } else if next == '}' {
                     out_char = None;
-                    debug!("Creating trans for state {from_state} -> {to_state}");
+                    debug!("(B) Creating trans for state {from_state} -> {to_state}");
                     let (_, v) = data.get_mut(&from_state).unwrap();
                     v.push(Trans {
                         trans: to_state.clone(),
@@ -229,7 +233,7 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
                 if next.is_whitespace() {
                     // Do Nothing
                 } else if next == ',' {
-                    debug!("Creating trans for state {from_state} -> {to_state}");
+                    debug!("(C) Creating trans for state {from_state} -> {to_state}");
                     let (_, v) = data.get_mut(&from_state).unwrap();
                     v.push(Trans {
                         trans: to_state.clone(),
@@ -240,7 +244,7 @@ pub fn read_transistion_file(file: &str, logic: &mut SymLogic) {
                     to_state = String::new();
                     state = PState::BeforeTrans;
                 } else if next == '}' {
-                    debug!("Creating trans for state {from_state} -> {to_state}");
+                    debug!("(D) Creating trans for state {from_state} -> {to_state}");
                     let (_, v) = data.get_mut(&from_state).unwrap();
                     v.push(Trans {
                         trans: to_state.clone(),

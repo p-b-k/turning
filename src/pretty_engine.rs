@@ -18,10 +18,13 @@ use ansi_term::{
     Color::{Blue, Green, Red, Yellow},
     Style,
 };
+use pad::PadStr;
 
 const BLANK_CODE: u32 = 0x26ac;
 
 const BLANK_CHAR: char = char::from_u32(BLANK_CODE).unwrap();
+
+const MARGIN: usize = 4;
 
 pub struct PrettyEngine<L, S>
 where
@@ -95,31 +98,34 @@ fn print_state<L, S>(
         None => false,
     };
 
-    // let width: usize = 40 + engine.max_state_len;
-    let width: usize = 8;
-    if machine.logic.is_final(&machine.state) {
+    let width: usize = engine.max_state_len;
+    let padded_state = state_id.pad_to_width_with_alignment(width + MARGIN, pad::Alignment::Right);
+
+    let status = if machine.logic.is_final(&machine.state) {
         if new_state {
-            print!(
-                "{} ",
+            format!(
+                "{}",
                 Style::new()
                     .bold()
-                    .paint(format!("{:width$}", Green.paint(state_id)))
-            );
+                    .paint(format!("{}", Green.paint(padded_state)))
+            )
         } else {
-            print!("{:8} ", Green.paint(state_id));
+            format!("{}", Green.paint(padded_state))
         }
     } else {
         if new_state {
-            print!(
-                "{:8} ",
+            format!(
+                "{}",
                 Style::new()
                     .bold()
-                    .paint(format!("{}", Red.paint(state_id)))
-            );
+                    .paint(format!("{}", Red.paint(padded_state)))
+            )
         } else {
-            print!("{:8} ", Red.paint(state_id));
+            format!("{}", Red.paint(padded_state))
         }
-    }
+    };
+
+    print!("{} ", status.pad_to_width(width));
 
     let (lb, ub) = match tape.bounds {
         Some(x) => x,
@@ -129,16 +135,16 @@ fn print_state<L, S>(
     let l = if machine.position < lb {
         machine.position
     } else {
-        lb
+        lb - 1
     };
 
     let h = if machine.position > ub {
-        machine.position
+        machine.position + 1
     } else {
-        ub
+        ub + 2
     };
 
-    for i in (l - 1)..(h + 2) {
+    for i in l..h {
         let is_pos = i == machine.position;
         let char_to_print = match tape.get(&i) {
             Some(c) => c.clone(),
@@ -149,7 +155,7 @@ fn print_state<L, S>(
             print!(
                 "{}",
                 Style::new()
-                    .underline()
+                    .reverse()
                     .paint(format!("{}", Yellow.paint(format!("{}", char_to_print))))
             );
         } else {
@@ -173,20 +179,13 @@ fn get_cell_fmt<'a>(
             if i.clone() == pos {
                 Style::new()
                     .bold()
+                    .reverse()
                     .paint(format!("{}", Green.paint(char_to_print.to_string())))
             } else {
                 defstyle
             }
         }
-        AltType::Clear(i) => {
-            if i.clone() == pos {
-                Style::new()
-                    .bold()
-                    .paint(format!("{}", Green.paint(char_to_print.to_string())))
-            } else {
-                defstyle
-            }
-        }
+        AltType::Clear(_) => defstyle,
         AltType::Alter(i) => {
             if i.clone() == pos {
                 Style::new()
