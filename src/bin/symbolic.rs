@@ -5,7 +5,7 @@
 use std::env;
 use std::io::{Read, stdin};
 
-use turing::machine::TuringMachine;
+use turing::machine::{TuringEngine, TuringLogic, TuringMachine};
 use turing::pretty_engine::PrettyEngine;
 use turing::sym_machine::SymLogic;
 use turing::tape::{Tape, from_vec};
@@ -17,6 +17,7 @@ const DEFAULT_LOGIC: &str = "adder";
 struct AppConfig {
     pub file: String,
     pub delay: u64,
+    pub show_vm: bool,
 }
 
 impl AppConfig {
@@ -25,9 +26,14 @@ impl AppConfig {
         AppConfig {
             file: String::from(file),
             delay: 1000,
+            show_vm: false,
         }
     }
 }
+
+struct NullEngine {}
+
+impl TuringEngine<char, String, SymLogic> for NullEngine {}
 
 fn main() {
     env_logger::init();
@@ -52,10 +58,25 @@ fn main() {
     // Create the turning machine object
     let mut machine: TuringMachine<char, String, SymLogic> = TuringMachine::new(0, logic);
 
-    let mut engine = PrettyEngine::new(max_state_size);
-    engine.sleep_time = cfg.delay;
+    if cfg.show_vm {
+        let mut engine = PrettyEngine::new(max_state_size);
+        engine.sleep_time = cfg.delay;
 
-    machine.run(&mut tape, &mut engine);
+        machine.run(&mut tape, &mut engine);
+    } else {
+        machine.run(&mut tape, &mut NullEngine {});
+    }
+
+    println!(
+        "Running {} with input from stdin returned {} (after {} transitions)",
+        cfg.file,
+        if machine.logic.is_final(&machine.state) {
+            "Success"
+        } else {
+            "Failure"
+        },
+        machine.step_cnt
+    );
 }
 
 fn process_args(cfg: &mut AppConfig) {
@@ -66,6 +87,8 @@ fn process_args(cfg: &mut AppConfig) {
         if args[i] == "--logic" {
             i = i + 1;
             cfg.file = format!("{LOGIC_ROOT}/{}.tm", args[i]);
+        } else if args[i] == "--show" {
+            cfg.show_vm = true;
         } else if args[i] == "--delay" {
             i = i + 1;
             cfg.delay = args[i].parse().unwrap();
