@@ -25,7 +25,7 @@ impl AppConfig {
         let file = format!("{LOGIC_ROOT}/{DEFAULT_LOGIC}.tm");
         AppConfig {
             file: String::from(file),
-            delay: 1000,
+            delay: 100,
             show_vm: false,
         }
     }
